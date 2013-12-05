@@ -1,60 +1,59 @@
-function collapse_pwd {
-    echo $(pwd | sed -e "s,^$HOME,~,")
+__virtualenv () {
+  if [ $VIRTUAL_ENV ] ; then
+      printf '%s' "%{$fg[blue]%}"
+      printf '%s' "(venv: `basename $VIRTUAL_ENV`)"
+  fi
 }
 
-function __git_prompt {
-  local DIRTY="\e[0;33m"
-  local CLEAN="\e[0;32m"
-  local UNMERGED="\e[0;31m"
-  local RESET="\e[0m"
+generate () {
+  workingDirectory="${(%):-%1~} "
+  printf '\n%s' "%{$fg[cyan]%}"
+  printf '%s' "$workingDirectory"
+
+  gitStatus=$(gitInfo)
+  if [ -n "$gitStatus" ]; then
+    printf '%s' "$gitStatus"
+  fi
+
+  virtualEnv=$(__virtualenv)
+  if [ -n "$virtualEnv" ]; then
+    printf '%s' "$virtualEnv"
+  fi
+
+  printf '%s' "> "
+  printf '%s' "%{$reset_color%}"
+}
+
+gitInfo() {
   git rev-parse --git-dir >& /dev/null
-  if [[ $? == 0 ]]
-  then
-    echo -n " "
-    if [[ `git ls-files -u >& /dev/null` == '' ]]
-    then
+  if [[ $? == 0 ]] then
+    if [[ `git ls-files -u >& /dev/null` == '' ]] then
       git diff --quiet >& /dev/null
-      if [[ $? == 1 ]]
-      then
-        echo -n $DIRTY
+      if [[ $? == 1 ]] then
+        printf '%s' "%{$fg[yellow]%}"
       else
         git diff --cached --quiet >& /dev/null
-        if [[ $? == 1 ]]
-        then
-          echo -n $DIRTY
+        if [[ $? == 1 ]] then
+          printf '%s' "%{$fg[yellow]%}"
         else
-          echo -n $CLEAN
+          printf '%s' "%{$fg[green]%}"
         fi
       fi
     else
-      echo -n $UNMERGED
+      printf '%s' "%{$fg[red]%}"
     fi
-    echo -n `git branch | grep '* ' | sed 's/..//'`
-    echo -n $RESET
-    # echo -n ")"
+
+    printf '%s' "("
+    printf '%s' `git branch | grep '* ' | sed 's/..//'`
+    printf '%s' ")"
   fi
 }
 
-function __virtualenv {
-  local COLOR="\e[0;34m"
-  local CLEAN="\e[0m"
-
-  if [ $VIRTUAL_ENV ] ; then
-    echo -n $COLOR
-    echo -n " (venv: `basename \"$VIRTUAL_ENV\"`)"
-    echo -n $CLEAN
-  fi
-}
-
-function generate () {
-    printf $'\n\e[0;32m[ %s\e[0m%s\e[0;32m%s\e[0;32m ]\e[0m\n:> ' "%~" "$(__git_prompt)" "$(__virtualenv)"
-}
-
+autoload -U promptinit
+promptinit
 setopt prompt_subst
 autoload -Uz generate
 
 PROMPT='$(generate)'
-VIRTUAL_ENV_DISABLE_PROMPT=1
 
-autoload -U promptinit
-promptinit
+VIRTUAL_ENV_DISABLE_PROMPT=1
