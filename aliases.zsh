@@ -23,6 +23,7 @@ alias afind='ack-grep -il'
 alias s='svn'
 alias st='s st'
 
+alias v='vagrant'
 alias g='git'
 alias clone='g clone'
 alias rc='. ~/.zshrc; echo "ZSH reloaded"'
